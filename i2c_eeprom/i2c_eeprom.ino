@@ -45,6 +45,9 @@
 */
 /* Notes: Misc
  The byte type is the same as an unsigned char and comes from the arduino style syntax.
+ The EEPROM uses 256 byte pages.
+ Arduino wire library has 32 byte buffer. 30 bytes when 2 byte addresses
+ are used. To prevent any problems 16 byte chunks of data will be used.
 */
 #include <Wire.h>
 #define LED 13          // Pin 13 connected to an LED
@@ -53,6 +56,7 @@
 //Function Prototypes
 void readEEPROM();      // Reads data from EEPROM
 unsigned char readEEPROMbyte(int ADDR, int MSB, int LSB);  // Read a byte from EEPROM
+void readEEPROMPage(int ADDR, int pageMSB, int pageLSB);  // Read a page from EEPROM to Serial Output
 //----------------------------------------------------------------------
 void setup()
 {
@@ -121,3 +125,38 @@ unsigned char readEEPROMbyte(int ADDR, int MSB, int LSB)
     }
     return b;
 }
+
+void readEEPROMPage(int ADDR, int pageMSB, int pageLSB)
+{
+    //TODO: Add in a check for pageMSB & pageLSB to ensure that they are
+    //      addressing a correct page boundary. (256 byte pages)
+    
+    int byteCount = 256;          // Total number of bytes in a page
+    Wire.beginTransmission(ADDR); // transmit to device address ADDR
+    Wire.write(byte(pageMSB));        // load byte MSB into register
+    Wire.write(byte(pageLSB));        // load byte LSB into register
+    Wire.endTransmission();       // stop transmitting
+    // Wait for reading, should be faster than 5ms write operation
+    delay(5);
+    
+    while (byteCount != 0){
+        Wire.requestFrom(ADDR,16);     // request 16 bytes (device ADDR)
+        if(16 <= Wire.available())   // if byte received
+        {
+            int dataCount = 16;
+            while (dataCount != 0){
+                int value = Wire.read();    // read received byte    
+                Serial.print(value,HEX);    // byte to serial console
+                Serial.print(" ");          // space between bytes
+                if ((count == 13) | (count == 9) | (count == 5)){
+                    // Additional spaces every 4 bytes for readability
+                    Serial.print(" ");
+                }
+                dataCount = dataCount - 1;
+            }
+        byteCount = byteCount - 16;
+        }
+    }
+    
+}
+
