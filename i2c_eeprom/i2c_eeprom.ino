@@ -148,7 +148,7 @@ void readEEPROMPage(int ADDR, int pageMSB, int pageLSB)
                 int value = Wire.read();    // read received byte    
                 Serial.print(value,HEX);    // byte to serial console
                 Serial.print(" ");          // space between bytes
-                if ((count == 13) | (count == 9) | (count == 5)){
+                if ((dataCount == 13) | (dataCount == 9) | (dataCount == 5)){
                     // Additional spaces every 4 bytes for readability
                     Serial.print(" ");
                 }
