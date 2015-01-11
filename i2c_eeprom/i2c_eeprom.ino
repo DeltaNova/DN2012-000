@@ -42,12 +42,15 @@
                     0101 0000 - Lower 512kbit - 0x50
                     0101 0001 - Upper 512kbit - 0x51
 
-*/)
+*/
 #include <Wire.h>
 #define LED 13          // Pin 13 connected to an LED
 #define MEM0 0x50       // Lower 512kbit
 #define MEM1 0x51       // Upper 512kbit
+//Function Prototypes
+void readEEPROM();
 
+//----------------------------------------------------------------------
 void setup()
 {
     Serial.begin(9600);   // start serial communications
@@ -58,14 +61,39 @@ void setup()
 void loop()
 {
     digitalWrite(LED,HIGH);
-    delay(4000);
+    delay(1000);
     digitalWrite(LED,LOW);
     readEEPROM();
-    delay(4000);            // Adjust delay later based on readEEPROM() execution
+    delay(1000);            // Adjust delay later based on readEEPROM() execution
 }
 
 void readEEPROM()
 {
-    // readingEEPROM
-    
+    // readingEEPROM (MEM0)
+    Wire.beginTransmission(MEM0); // transmit to device MEM0 (0x50)
+    Wire.write(byte(0x00));     // load start address MSB into register
+    Wire.write(byte(0x00));     // load start address LSB into register
+    Wire.endTransmission();     // stop transmitting
+
+    // Wait for readings to happen
+    // datasheet indicates write within 5 ms, read should be faster
+    delay(5);
+
+    // Read data from EEPROM
+    Wire.requestFrom(MEM0, 2);    // request 2 bytes from MEM0 (0x50)
+
+    // Receive data from EEPROM
+    if(2 <= Wire.available())   // if two bytes were received
+    {
+        byte b1 = Wire.read();  // receive 1st byte
+        byte b2 = Wire.read();  // receive 2nd byte
+
+        // Write output to the serial port.
+        Serial.println("EEPROM Read:");
+        Serial.print("First Byte: ");
+        Serial.println(b1, HEX);
+        Serial.print("Second Byte: ");
+        Serial.println(b2, HEX);
+    }
 }
+
