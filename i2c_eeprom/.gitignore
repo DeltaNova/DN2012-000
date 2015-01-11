@@ -1,8 +1,0 @@
-# Ignore Folders
-.dep/
-.lib/
-
-# Ignore Files
-*~
-*.o
-*.hex
