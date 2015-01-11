@@ -15,7 +15,7 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-/*
+/* Notes: Addressing
  The EEPROM being used is an M24M01-R 1-Mbit serial I2C EEPROM
  http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/CD00147128.pdf
 
@@ -43,13 +43,16 @@
                     0101 0001 - Upper 512kbit - 0x51
 
 */
+/* Notes: Misc
+ The byte type is the same as an unsigned char and comes from the arduino style syntax.
+*/
 #include <Wire.h>
 #define LED 13          // Pin 13 connected to an LED
 #define MEM0 0x50       // Lower 512kbit
 #define MEM1 0x51       // Upper 512kbit
 //Function Prototypes
-void readEEPROM();
-
+void readEEPROM();      // Reads data from EEPROM
+unsigned char readEEPROMbyte(int ADDR, int MSB, int LSB);  // Read a byte from EEPROM
 //----------------------------------------------------------------------
 void setup()
 {
@@ -64,6 +67,9 @@ void loop()
     delay(1000);
     digitalWrite(LED,LOW);
     readEEPROM();
+    byte selected_byte = readEEPROMbyte(0x50,0x10,0x10);
+    Serial.print("Selected Byte: ");
+    Serial.println(selected_byte,HEX);
     delay(1000);            // Adjust delay later based on readEEPROM() execution
 }
 
@@ -97,3 +103,21 @@ void readEEPROM()
     }
 }
 
+unsigned char readEEPROMbyte(int ADDR, int MSB, int LSB)
+{
+    unsigned char b = 0x00;
+    Wire.beginTransmission(ADDR); // transmit to device address ADDR
+    Wire.write(byte(MSB));        // load byte MSB into register
+    Wire.write(byte(LSB));        // load byte LSB into register
+    Wire.endTransmission();       // stop transmitting
+    // Wait for reading, should be faster than 5ms write operation
+    delay(5);
+    // Read byte from EEPROM
+    Wire.requestFrom(ADDR,1);     // request single byte (device ADDR)
+    // Receive Byte
+    if(1 <= Wire.available())   // if byte received
+    {
+        b = Wire.read(); // read byte
+    }
+    return b;
+}
