@@ -57,6 +57,7 @@
 void readEEPROM();      // Reads data from EEPROM
 unsigned char readEEPROMbyte(int ADDR, int MSB, int LSB);  // Read a byte from EEPROM
 void readEEPROMPage(int ADDR, int pageMSB, int pageLSB);  // Read a page from EEPROM to Serial Output
+int msblsb2int(unsigned char MSB, unsigned char LSB); // Convert MSB & LSB to an integer
 //----------------------------------------------------------------------
 void setup()
 {
@@ -74,6 +75,7 @@ void loop()
     byte selected_byte = readEEPROMbyte(0x50,0x10,0x10);
     Serial.print("Selected Byte: ");
     Serial.println(selected_byte,HEX);
+    readEEPROMPage(0x50,0x00,0x00);
     delay(1000);            // Adjust delay later based on readEEPROM() execution
 }
 
@@ -138,8 +140,16 @@ void readEEPROMPage(int ADDR, int pageMSB, int pageLSB)
     Wire.endTransmission();       // stop transmitting
     // Wait for reading, should be faster than 5ms write operation
     delay(5);
-    
+
+    char tmp[32];   // Temp character buffer for address formatting.
+    int address = msblsb2int(pageMSB,pageLSB); // int of page start addr
+
     while (byteCount != 0){
+        sprintf(tmp,"%06d",address); //Format address and store in buffer.
+        Serial.print(tmp);    //Print formatted address
+        Serial.print(" ");
+        Serial.print(" ");
+
         Wire.requestFrom(ADDR,16);     // request 16 bytes (device ADDR)
         if(16 <= Wire.available())   // if byte received
         {
@@ -155,8 +165,20 @@ void readEEPROMPage(int ADDR, int pageMSB, int pageLSB)
                 dataCount = dataCount - 1;
             }
         byteCount = byteCount - 16;
+
+        Serial.print(" ");
+        address = address + 16;
+        sprintf(tmp,"%06d",address-1);
+        Serial.print(tmp);
+        Serial.println(""); // Add a new line for readability
         }
     }
-    
+}
+
+int msblsb2int(unsigned char MSB, unsigned char LSB)
+{
+    // Make an integer by combining MSB & LSB
+    int val = (MSB << 8) | LSB;
+    return val;
 }
 
